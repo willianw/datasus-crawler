@@ -1,4 +1,8 @@
-from ftplib import FTP
+from datasus.treatment import get_ftp_start_node
+from datasus.utils import get_metadata
+
+from ftplib import FTP, error_perm
+from tqdm import tqdm
 import re
 import os
 
@@ -7,16 +11,22 @@ def start_download(CONFIG):
     ''' Start downloading files from ftp connection.
         - CONFIG: (dict) data from config.json
     '''
-    os.makedirs(CONFIG['download_folder'], exist_ok=True)
     ftp = FTP(CONFIG['root_url'])
     ftp.login()
+
+    download_list = []
+    filters = CONFIG['filters']
     start_url = CONFIG['root_directory']
-    file_tree(
-        ftp,
-        start_url,
-        os.path.abspath(CONFIG['download_folder']),
-        CONFIG['filters']
-    )
+    for database in filters['databases']:
+        download_list += file_tree(
+            ftp,
+            get_ftp_start_node(database, None, start_url),
+            filters
+        )
+    file_path = os.path.abspath(CONFIG['download_folder'])
+    os.makedirs(file_path, exist_ok=True)
+    for download_url in tqdm(download_list):
+        download_file(ftp, download_url, file_path)
     ftp.quit()
     
 def ftp_line_parse(line, data_list):
@@ -27,38 +37,57 @@ def ftp_line_parse(line, data_list):
         filename = data.group(2)
         data_list.append((folder, filename))
     else:
-        raise SyntaxException(f'Incorrect line "{line}"')
+        raise IOError(f'Incorrect line "{line}"')
     
 def download_file(ftp, url, path):
-    print(f"RETR {url}")
-    with open(path, 'wb') as f:
-        ftp.retrbinary(f'RETR {url}', f.write)
+    filename = os.path.join(path, os.path.basename(url))
+    if not os.path.exists(filename):
+        try:
+            with open(filename, 'wb') as f:
+                ftp.retrbinary(f'RETR {url}', f.write)
+        except error_perm as e:
+            print(f'ERROR RETR {url}')
+            raise e
 
-def file_tree(ftp, url_path, file_path, filters):
+def file_tree(ftp, url_path, filters):
     ''' Downloads files from DATASUS FTP System recursively
         - ftp: FTP connection. Must be initialized before.
         - url_path: current ftp path for file extraction
-        - file_path: current disk folder for download files
         - filters: (dict) restrict which files to download:
             - databases: list of database names to select, e.g.: ['SIASUS', 'SIHSUS', 'SIM']
-            - states: list of national states, e.g.: ['PB', 'TO', 'RS']
+            - uf: list of national states, e.g.: ['PB', 'TO', 'RS']
             - date: tuple (start date, end date). They must be year or a string in format "MM/YYYY"
     '''
-    
-    os.makedirs(file_path, exist_ok=True)
+
+
     folder_content = []
-    ftp.retrlines(
-        f'LIST {url_path}',
-        lambda line: ftp_line_parse(
-                                    line,
-                                    folder_content))
+    
+    try:
+        ftp.retrlines(
+            f'LIST {url_path}',
+            lambda line: ftp_line_parse(
+                                        line,
+                                        folder_content))
+    except error_perm:
+        print(f"ERROR: LIST {url_path}")
+    
+    download_list = []
     for folder, filename in folder_content:
-        new_url_path = f"{url_path}{filename}/"
-        new_file_path = os.path.join(file_path, filename)
+        #new_url_path = f"{url_path}{filename}{'/' if folder else ''}"
+        new_url_path = os.path.join(url_path, filename)
         if folder:
-            print(f"Searching {new_file_path}")
-            file_tree(ftp, new_url_path, new_file_path, filters)
+            download_list += file_tree(ftp, new_url_path, filters)
         else:
-            print(f"Downloading {new_file_path}")
-            download_file(ftp, new_url_path, new_file_path)
+            # Filter files to download
+            metadata = get_metadata(filename)
+            reject_criteria = [
+                filters.get('uf',    False) and metadata['uf']    not in filters['uf'],
+                filters.get('year',  False) and metadata['year']  not in filters['year'],
+                filters.get('month', False) and metadata['month'] not in filters['month'],
+            ]
+            if any(reject_criteria):
+                continue
+            download_list.append(new_url_path)
+
+    return download_list
     

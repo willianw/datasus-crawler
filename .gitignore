@@ -1,4 +1,9 @@
-# Generated folders
+# Folders
 
 data/
+notebooks/
+.vscode/
 
+# Generated files/folders
+
+__pycache__
