@@ -6,28 +6,37 @@ import os
 
 
 def start(ftp_config: dict, urls: list, path: str):
-    download_files(ftp_config, urls[:100], path)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(download_files(ftp_config, urls[:100], path))
+    loop.close()
 
-def download_files(ftp_config: dict, urls: list, path: str):
+async def download_files(ftp_config: dict, urls: list, path: str):
     errors = []
-    for url in tqdm(urls,
+    downloads = [
+        asyncio.create_task(download_file(ftp_config, url, path))
+        for url in urls
+    ]
+    for download in tqdm(asyncio.as_completed(downloads),
                          desc="Download do DATASUS",
-                         total=len(urls),
-                         unit=" Arquivos"):
+                         total=len(downloads),
+                         unit="Arquivos"):
         try:
-            download_file(ftp_config, url, path)
+            url = await download
         except Exception as exc:
             errors.append(urls)
     return errors
 
-def download_file(ftp_config: dict, url: str, path: str):
+async def download_file(ftp_config: dict, url: str, path: str):
     filename = os.path.join(path, os.path.basename(url))
     if not os.path.exists(filename):
+        def chunk(chk, fp):
+            fp.write(chk)
+            fp.flush()
         try:
             ftp = ftplib.FTP(ftp_config['ftp_host'])
             ftp.login()
-            with open(filename, 'wb') as f:
-                ftp.retrbinary(f'RETR {url}', f.write)
+            async with aiofiles.open(filename, 'wb') as f:
+                ftp.retrbinary(f'RETR {url}', lambda c: chunk(c, f))
             ftp.quit()
         except Exception as e:
             print(e)
