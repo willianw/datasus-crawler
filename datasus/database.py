@@ -13,11 +13,15 @@ import re
 def dbc2bdf_single(filename):
     metadata = get_metadata(filename)
     converted_file = f'{metadata["path"]}.bdf'
-    subprocess.run([
-        os.path.join('datasus', 'scripts', 'dbc2bdf'),
-        filename,
-        converted_file
-    ])
+    try:
+        subprocess.Popen([
+            os.path.join('datasus', 'scripts', 'dbc2bdf'),
+            filename,
+            converted_file
+        ])
+    except OSError:
+        print(f"Too big {filename}")
+        return False
     metadata['filename'] = converted_file
     return metadata
 
@@ -29,15 +33,20 @@ def extract_files(data_folder, filters):
         os.path.join(data_folder, '*.dbc'))
     for filename in tqdm(data_files):
         converted = dbc2bdf_single(filename)
+        if not converted:
+            continue
         db = converted['database']
         database = os.path.join(database_folder, db)
         try:
-            bdf = list(DBF(converted['filename']))
+            bdf = DBF(converted['filename'])
         except ValueError:
             corrupted_files.append(converted['filename'])
+        except Exception:
+            print(f"Problem file {filename}")
+            continue
         if not bdf:
             continue
-        df = pd.DataFrame(bdf, columns=bdf[0].keys())
+        df = pd.DataFrame(bdf, columns=bdf.field_names)
         df['month'] = converted['month']
         df['year'] = converted['year']
         df['uf'] = converted['uf']

@@ -7,3 +7,4 @@ notebooks/
 # Generated files/folders
 
 __pycache__
+*.pyc
