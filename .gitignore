@@ -6,6 +6,14 @@ notebooks/
 .vscode/
 
 # Generated files/folders
+__pycache__
+env
 
+# Compiled files
+scripts/dbc2bdf
 __pycache__
 *.pyc
+
+# Data files
+*.dbf
+*.dbc

@@ -1,0 +1,5 @@
+{
+	"root_url":"ftp.datasus.gov.br",
+	"root_directory":"dissemin/publicos/",			
+	"download_folder":"data"
+}
