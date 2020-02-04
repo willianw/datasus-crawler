@@ -9,8 +9,15 @@ import glob
 import os
 import re
 
+def prepare_environment():
+    dbc2dbf_filename = os.path.join("datasus", "scripts", "dbc2dbf")
+    if not os.path.exists(dbc2dbf_filename):
+        subprocess.run([
+            "gcc", "-o", dbc2dbf_filename,
+            os.path.join("datasus", "scripts", "dbc2dbf.c"),
+            os.path.join("datasus", "scripts", "blast.c")])
 
-def dbc2bdf_single(filename):
+def dbc2dbf_single(filename):
     metadata = get_metadata(filename)
     converted_file = f'{metadata["path"]}.bdf'
     try:
