@@ -1,5 +1,6 @@
 # Folders
 
+env/
 data/
 notebooks/
 .vscode/
@@ -7,3 +8,4 @@ notebooks/
 # Generated files/folders
 
 __pycache__
+*.pyc
