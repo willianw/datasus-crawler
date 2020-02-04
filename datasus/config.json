@@ -1,5 +1,6 @@
 {
-	"root_url":"ftp.datasus.gov.br",
-	"root_directory":"dissemin/publicos/",			
-	"download_folder":"data"
+	"ftp_host": "ftp.datasus.gov.br",
+	"ftp_port": 21,
+	"root_directory": "dissemin/publicos/",			
+	"download_folder": "data"
 }

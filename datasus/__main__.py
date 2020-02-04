@@ -24,7 +24,7 @@ def prepare_environment():
 
 if __name__ == "__main__":
     # TO-DO: Implement filters logic based on CLI parameters
-    CONFIG['filters'] = {'databases': ['SIHSUS'], 'uf':['SP']}
+    CONFIG['filters'] = {'databases': ['SIHSUS'], 'uf':['RJ']}
     prepare_environment()
     download.start_download(CONFIG) # Gather below function in a single process
-    database.extract_files('data', CONFIG['filters'])
+    #database.extract_files('data', CONFIG['filters'])
