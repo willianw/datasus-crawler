@@ -3,6 +3,7 @@
 
 from datasus import download
 from datasus import database
+from datasus import list_all
 
 import subprocess
 import argparse
@@ -16,15 +17,8 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--config_file', nargs=1, metavar='<FILE>',
                         help='Arquivo de configurações')
                         
-    parser.add_argument('subcommand', choices=['download', 'list', 'load', 'get'],
+    parser.add_argument('subcommand', choices=['download', 'list', 'extract', 'load', 'get'],
                         help='Subcomandos')
-
-    #sub = parser.add_subparsers(help='Subcomandos')
-    #sub.add_parser('download', help='obtém arquivos brutos da internet')
-    #sub.add_parser('list', help='exibe informações sobre os arquivos brutos presentes')
-    #sub.add_parser('load', help='converte os arquivos brutos para um formato desejado')
-    #sub.add_parser('get', help='obtém arquivos e converte-os para o formato desejado.\n'
-    #                          +'Equivalente a chamar "download" e "load" em sequência')
 
     parser.add_argument('-o', '--output_file', nargs=1,
                         help='Arquivo de saída')
@@ -36,14 +30,10 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
 
 
-    
-    print(args)
-
-    if (args['output']):
+    if (args['output_file']):
         sys.stdout = open('stdout_file', 'w')
-
     
-    if args['config-file']:
+    if args['config_file']:
         with open(args['config-file'], 'r') as f:
             CONFIG = json.load(f)
     else:
@@ -53,8 +43,14 @@ if __name__ == "__main__":
             "download_folder":"data"
         }
 
-    if False:
-        # TO-DO: Implement filters logic based on CLI parameters
-        CONFIG['filters'] = {'databases': ['SIHSUS'], 'uf':['SP']}
+    # TO-DO: Implement filters logic based on CLI parameters
+    CONFIG['filters'] = {'databases': ['SIHSUS']}
+    CONFIG['filters'] = {'databases': ['SIHSUS', 'SIASUS'], 'ufs': ['SP', 'RJ', 'MG', 'ES']}
+    
+    # Switch Commands
+    if args['subcommand'] == 'download':
         download.start_download(CONFIG) # Gather below function in a single process
+    elif args['subcommand'] == 'extract':
         database.extract_files('data', CONFIG['filters'])
+    elif args['subcommand'] == 'list':
+        list_all.list_all(CONFIG)

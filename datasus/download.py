@@ -19,8 +19,7 @@ def start_download(CONFIG):
     '''
 
     ftp_config = {
-        'ftp_host': CONFIG['ftp_host'],
-        'port': CONFIG['ftp_port'],
+        'ftp_host': CONFIG['root_url'],
         'login': 'anonymous',
         'password': 'anonymous@'
     }
@@ -79,14 +78,15 @@ def file_tree(ftp_config, url_path, filters):
         else:
             # Filter files to download
             metadata = get_metadata(filename)
-            reject_criteria = [
-                filters.get('uf',    False) and metadata['uf']    not in filters['uf'],
-                filters.get('year',  False) and metadata['year']  not in filters['year'],
-                filters.get('month', False) and metadata['month'] not in filters['month'],
-            ]
-            if any(reject_criteria):
-                continue
-            download_list.append(new_url_path)
+            if 'error' not in metadata:
+                reject_criteria = [
+                    filters.get('uf',    False) and metadata['uf']    not in filters['uf'],
+                    filters.get('year',  False) and metadata['year']  not in filters['year'],
+                    filters.get('month', False) and metadata['month'] not in filters['month'],
+                ]
+                if any(reject_criteria):
+                    continue
+                download_list.append(new_url_path)
 
     ftp.quit()
     return download_list

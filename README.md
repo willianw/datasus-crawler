@@ -8,6 +8,7 @@ python -m datasus <subcomando> [opcões]
 
 **Subcomandos**
 - **download**: obtém arquivos brutos da internet
+- **extract**: descompacta os arquivos brutos baixados
 - **list**: exibe informações sobre os arquivos brutos presentes
 - **load**: converte os arquivos brutos para um formato desejado
 - **get**: obtém arquivos e converte-os para o formato desejado. Equivalente a chamar "download" e "load" em sequência
