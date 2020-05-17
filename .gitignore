@@ -1,10 +1,18 @@
 # Folders
 
+env/
 data/
 notebooks/
 .vscode/
 
 # Generated files/folders
-
 __pycache__
+
+# Compiled files
+scripts/dbc2bdf
 *.pyc
+
+# Data files
+*.dbf
+*.dbc
+
